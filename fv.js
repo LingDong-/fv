@@ -59,6 +59,8 @@ let fv = new function(){let that = this;
   new_fn('distance',a=>Math.sqrt(a[0].map((x,i)=>(x-a[1][i])).reduce((z,x)=>(z+x*x),0)));
   new_fn('vec',a=>a.flat());
 
+  new_fn('neg',hadamard((a)=>(-a)));
+
   let sw = a=>a[0].map(x=>a[1][x]);
   sw.no_auto_dim = true;
   new_fn('swizzle',sw);
@@ -220,7 +222,6 @@ let fv = new function(){let that = this;
         gs[i] = prefix(gs[i])
       }
     }
-    gs = ((gs[0]=='-') ?['0']:[]).concat(gs);
     
     for (let i = 0; i < gs.length; i++){
       if (gs[i].__swizzle){
@@ -231,6 +232,15 @@ let fv = new function(){let that = this;
         gs.splice(i,1);
       }
     }
+
+    for (let i = gs.length-1; i>=0; i--){
+      if (gs[i].__o == '-'){
+        if (gs[i-1] === undefined || gs[i-1].__o || gs[i-1] == ','){
+          gs.splice(i,2,{__op:'neg',__xs:[gs[i+1]]});
+        }
+      }
+    }
+
     for (let i = gs.length-1; i>=0; i--){
       if (gs[i] == ',') gs.splice(i,1);
     }
@@ -265,6 +275,10 @@ let fv = new function(){let that = this;
     let xs = ps.__xs.slice();
     let op = ps.__op;
     
+    if (impls[op] === undefined){
+      console.warn("[error] no def: "+op);
+    }
+
     for (let i = 0; i < xs.length; i++){
       if (typeof xs[i] == 'object' && ('__op' in xs[i] || Array.isArray(xs[i]))){
         xs[i] = calc(xs[i],vs);
@@ -272,6 +286,9 @@ let fv = new function(){let that = this;
         xs[i] = vs[xs[i].__var];
       }
     }
+
+    let justnums = !xs.some(x=>(typeof x != 'number'));
+
     function dim(x){
       if (typeof x == 'number'){
         return 1;
@@ -295,6 +312,10 @@ let fv = new function(){let that = this;
       xs = xs.map(x=>make_dim(x,d));
     }
     let r = impls[op](xs);
+
+    if (!impls[op].no_auto_dim && justnums && Array.isArray(r) && r.length == 1){
+      return r[0];
+    }
     return r;
   }
 
@@ -322,7 +343,7 @@ let fv = new function(){let that = this;
     }
 
     let rs = calc(ps,vs);
-    if (rs.length == 1) return rs[0];
+    // if (rs.length == 1) return rs[0];
     return rs;
 
   }

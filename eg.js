@@ -38,5 +38,9 @@ console.log(fv`(1,2) * (1,2,3)`)
 
 console.log(fv`${a} + (1,2,3) - ${[4,5,6]} * vec(7,8,9) / (10 11 12) % (${13},${14},${15})`)
 
+console.log(fv`-3 + (- ${a}) + (-1,2,-3)`)
+
+console.log(fv`-(-1,-2,-3)`)
+
 console.dir(fv.cache,{depth:null});
 
